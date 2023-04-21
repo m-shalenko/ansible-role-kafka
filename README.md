@@ -25,3 +25,23 @@ This ansible role installs kafka cluster or standalone instance based on KRaft p
 | kafka_password | Password of kafka user (If SASL is enabled) | "changeMe" |
 | kafka_users | Defines other users if it is required (if SASL is enabled) | `{admin.password: "changeMe"}` |
 | kafka_opts | Defines KAFKA_OPTS environment variable | "" |
+
+## Example of inventory and playbook
+1) inventory file
+```ini
+[kafka]
+kafka-1.example.com kafka_node_id=1
+kafka-2.example.com kafka_node_id=2
+kafka-3.example.com kafka_node_id=3
+```
+2) Playbook
+```yaml
+---
+- hosts: kafka
+  become: true
+  gather_facts: false
+  roles:
+    - role: m_shalenko.ansible_role_kafka
+      tags:
+        - kafka
+```
