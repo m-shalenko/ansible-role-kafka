@@ -23,5 +23,5 @@ This ansible role installs kafka cluster or standalone instance based on KRaft p
 | kafka_log4j_properties | Overrides default log4j.properties | "" |
 | kafka_sasl_enabled | Enables/Disables SASL | false |
 | kafka_password | Password of kafka user (If SASL is enabled) | "changeMe" |
-| kafka_users | Defines other users if it is required (if SASL is enablede) | `{admin.password: "changeMe"}` |
+| kafka_users | Defines other users if it is required (if SASL is enabled) | `{admin.password: "changeMe"}` |
 | kafka_opts | Defines KAFKA_OPTS environment variable | "" |
