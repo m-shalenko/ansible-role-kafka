@@ -1,0 +1,162 @@
+---
+- name: Kafka | Gather required facts
+  ansible.builtin.setup:
+    filter: ansible_default_ipv4
+
+- name: Kafka | Create group
+  ansible.builtin.group:
+    name: "{{ kafka_group }}"
+    state: present
+
+- name: Kafka | Create user
+  ansible.builtin.user:
+    name: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    shell: /sbin/nologin
+    create_home: false
+
+- name: Kafka | Create work directories
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0750"
+  with_items:
+    - "{{ kafka_config_directory }}"
+    - "{{ kafka_data_directory }}"
+    - "{{ kafka_log_directory }}"
+
+- name: Kafka | Create extra files
+  ansible.builtin.copy:
+    content: "{{ item.value }}"
+    dest: "{{ kafka_config_directory }}/{{ item.key }}"
+    mode: "0644"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  with_dict: "{{ kafka_extra_files }}"
+
+- name: Kafka | Check kafka archive
+  ansible.builtin.stat:
+    path: "/opt/kafka_{{ kafka_scala_version }}-{{ kafka_version }}.tgz"
+  register: _kafka_archive
+
+- name: Kafka | Download kafka archive
+  ansible.builtin.get_url:
+    url: "{{ kafka_download_url }}"
+    dest: "/opt/kafka_{{ kafka_scala_version }}-{{ kafka_version }}.tgz"
+    mode: "0644"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  when: not _kafka_archive.stat.exists
+
+- name: Kafka | Extract kafka archive
+  ansible.builtin.unarchive:
+    src: "/opt/kafka_{{ kafka_scala_version }}-{{ kafka_version }}.tgz"
+    dest: /opt/
+    remote_src: true
+  when: not _kafka_archive.stat.exists
+
+- name: Kafka | Create a symbolic link to kafka bin directory
+  ansible.builtin.file:
+    src: /opt/kafka_{{ kafka_scala_version }}-{{ kafka_version }}/
+    dest: /opt/kafka
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    state: link
+  notify: Restart kafka
+
+- name: Kafka | Create default log4j properties config
+  ansible.builtin.copy:
+    src: log4j.properties
+    dest: "{{ kafka_config_directory }}/log4j.properties"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0644"
+  when: not kafka_log4j_properties
+  notify: Restart kafka
+
+- name: Kafka | Create log4j properties config
+  ansible.builtin.copy:
+    content: "{{ kafka_log4j_properties }}"
+    dest: "{{ kafka_data_directory }}/log4j.properties"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0644"
+  when: kafka_log4j_properties
+  notify: Restart kafka
+
+- name: Kafka | Create jaas configuration if SASL is enabled
+  ansible.builtin.template:
+    src: jaas.conf.j2
+    dest: "{{ kafka_config_directory }}/jaas.conf"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0640"
+  when: kafka_sasl_enabled
+  notify: Restart kafka
+
+- name: Kafka | Create server properties config
+  ansible.builtin.template:
+    src: server.properties.j2
+    dest: "{{ kafka_config_directory }}/server.properties"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0644"
+  notify: Restart kafka
+
+- name: Kafka | Check Cluster UUID
+  ansible.builtin.stat:
+    path: "{{ kafka_config_directory }}/cluster_uuid"
+  register: _cluster_uuid
+
+- name: Kafka | Generate Cluster UUID
+  ansible.builtin.shell:
+    cmd: /opt/kafka/bin/kafka-storage.sh random-uuid
+  run_once: true
+  register: __cluster_uuid
+  when: not _cluster_uuid.stat.exists
+
+- name: Kafka | Set Cluster UUID
+  ansible.builtin.set_fact:
+    kafka_cluster_uuid: "{{ __cluster_uuid.stdout }}"
+  when:
+    - __cluster_uuid is defined and __cluster_uuid
+    - not _cluster_uuid.stat.exists
+
+- name: Kafka | Copy Cluster UUID to file
+  ansible.builtin.copy:
+    content: "{{ kafka_cluster_uuid }}"
+    dest: "{{ kafka_config_directory }}/cluster_uuid"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0644"
+  when:
+    - __cluster_uuid is defined and __cluster_uuid
+    - not _cluster_uuid.stat.exists
+
+- name: Kafka | Format log directories
+  ansible.builtin.shell:
+    cmd: >
+      /opt/kafka/bin/kafka-storage.sh format
+      -t {{ kafka_cluster_uuid }} -c {{ kafka_config_directory }}/server.properties
+  when:
+    - __cluster_uuid is defined and __cluster_uuid
+    - not _cluster_uuid.stat.exists
+  notify: Restart kafka
+
+- name: Kafka | Create systemd service
+  ansible.builtin.template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart kafka
+
+- name: Kafka | Start service
+  ansible.builtin.systemd:
+    name: kafka
+    daemon_reload: true
+    enabled: true
+    state: started

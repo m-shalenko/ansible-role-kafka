@@ -1,0 +1,9 @@
+---
+dependencies: []
+galaxy_info:
+  description: A purpose of a role is to deploy kafka cluster/standalone instance
+  min_ansible_version: 2.13
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 20.04

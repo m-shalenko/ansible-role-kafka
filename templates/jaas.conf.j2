@@ -1,0 +1,12 @@
+KafkaServer {
+  org.apache.kafka.common.security.plain.PlainLoginModule required
+  serviceName="{{ kafka_hosts_group }}"
+  username="kafka"
+  password="{{ kafka_password }}"
+{% if kafka_users is defined and kafka_users %}
+{% for key, value in kafka_users.items() %}
+  user_{{ key }}="{{ value.password }}"
+{% endfor %}
+{% endif %}
+  user_kafka="{{ kafka_password }}";
+};

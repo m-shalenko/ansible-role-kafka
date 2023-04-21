@@ -1,0 +1,8 @@
+---
+- name: Kafka | Install OpenJDK
+  ansible.builtin.apt:
+    name:
+      - openjdk-{{ kafka_openjdk_version }}-jdk
+      - openjdk-{{ kafka_openjdk_version }}-jre
+    update_cache: true
+    allow_downgrade: true
