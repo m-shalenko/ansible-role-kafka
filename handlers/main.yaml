@@ -5,3 +5,10 @@
     daemon_reload: true
     enabled: true
     state: restarted
+
+- name: Restart kafka-mirror-maker
+  ansible.builtin.systemd:
+    name: kafka-mirror-maker
+    daemon_reload: true
+    enabled: true
+    state: restarted

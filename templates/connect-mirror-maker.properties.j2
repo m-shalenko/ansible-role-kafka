@@ -1,0 +1,5 @@
+{% if kafka_mirror_maker_properties is defined and kafka_mirror_maker_properties %}
+{% for key, value in kafka_mirror_maker_properties.items() %}
+{{ key }}={{ value }}
+{% endfor %}
+{% endif %}
