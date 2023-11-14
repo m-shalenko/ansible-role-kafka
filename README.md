@@ -3,6 +3,11 @@
 ## Purpose
 This ansible role installs kafka cluster or standalone instance based on KRaft protocol.
 
+## Install
+```bash
+ansible-galaxy role install m-shalenko.ansible-role-kafka
+```
+
 ## Example of inventory and playbook
 1) inventory file
 ```ini
@@ -18,7 +23,7 @@ kafka-3.example.com kafka_node_id=3 kafka_process_roles=broker,controller
   become: true
   gather_facts: false
   roles:
-    - role: m_shalenko.ansible_role_kafka
+    - role: m-shalenko.ansible-role-kafka
       tags:
         - kafka
 ```
