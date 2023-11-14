@@ -8,7 +8,7 @@ Type=simple
 User={{ kafka_user }}
 Group={{ kafka_group }}
 Environment="LOG_DIR={{ kafka_log_directory }}"
-Environment="KAFKA_LOG4J_OPTS=-Dlog4j.configuration=file:{{ kafka_config_directory }}/log4j.properties
+Environment="KAFKA_LOG4J_OPTS=-Dlog4j.configuration=file:{{ kafka_config_directory }}/log4j.properties"
 {% if kafka_sasl_enabled or kafka_opts %}
 Environment="KAFKA_OPTS={% if kafka_sasl_enabled %}-Djava.security.auth.login.config={{ kafka_config_directory }}/jaas.conf{% endif %} {% if kafka_opts %}{{ kafka_opts }}{% endif %}"
 {% endif %}

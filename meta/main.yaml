@@ -1,7 +1,7 @@
 ---
 dependencies: []
 galaxy_info:
-  description: A purpose of a role is to deploy kafka cluster/standalone instance
+  description: This ansible role installs kafka cluster or standalone instance based on KRaft protocol.
   min_ansible_version: 2.13
   platforms:
     - name: Ubuntu

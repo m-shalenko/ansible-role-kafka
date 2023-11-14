@@ -1,9 +1,8 @@
 ---
-kafka_version: 3.4.0
+kafka_version: 3.6.0
 kafka_scala_version: 2.13
 kafka_openjdk_version: 17
 kafka_download_url: https://dlcdn.apache.org/kafka/{{ kafka_version }}/kafka_{{ kafka_scala_version }}-{{ kafka_version }}.tgz
-
 # must be defined as same as ansible inventory group
 kafka_hosts_group: kafka
 kafka_user: kafka
@@ -12,173 +11,52 @@ kafka_config_directory: /etc/kafka
 kafka_data_directory: /var/lib/kafka
 kafka_log_directory: /var/log/kafka
 kafka_extra_files: {}
-#  prometheus-jmx-exporter.yml: |
-#    ---
-#    lowercaseOutputName: true
-#    lowercaseOutputLabelNames: true
-#    whitelistObjectNames: ["kafka.controller:*", "kafka.log:*", "kafka.network:*", "kafka.server:*"]
-#    rules:
-#      # kafka.controller:*
-#      - pattern: kafka.controller<type=ControllerStats, name=(\w+)(PerSec|RateAndTimeMs)><>Count
-#        name: jmx_kafka_controller_$1_total
-#        type: COUNTER
-#        help: ""
-#      - pattern: kafka.controller<type=KafkaController, name=ActiveControllerCount><>Value
-#        name: jmx_kafka_controller_activecontroller_total
-#        type: GAUGE
-#        help: ""
-#      # kafka.log:*
-#      - pattern: kafka.log<type=LogFlushStats, name=LogFlushRateAndTimeMs><>Count
-#        name: jmx_kafka_log_flush_total
-#        type: COUNTER
-#        help: ""
-#      - pattern: kafka.log<type=LogManager, name=OfflineLogDirectoryCount><>Value
-#        name: jmx_kafka_log_offlinedirectory_total
-#        type: GAUGE
-#        help: ""
-#      # kafka.network:*
-#      - pattern: kafka.network<type=RequestMetrics, name=ErrorsPerSec, request=(\w+), error=(.+)><>Count
-#        name: jmx_kafka_network_errors_total
-#        type: COUNTER
-#        labels:
-#          request: "$1"
-#          error: "$2"
-#        help: ""
-#      - pattern: kafka.network<type=RequestMetrics, name=RequestsPerSec, request=(Produce|FetchConsumer|FetchFollower), version=(\w+)><>Count
-#        name: jmx_kafka_network_requests_total
-#        type: COUNTER
-#        labels:
-#          request: "$1"
-#          version: "$2"
-#        help: ""
-#      - pattern: kafka.network<type=RequestMetrics, name=(Request|TemporaryMemory)Bytes, request=(\w+)><>Count
-#        name: jmx_kafka_network_$1_total
-#        type: COUNTER
-#        labels:
-#          request: "$2"
-#        help: ""
-#      - pattern: kafka.network<type=RequestMetrics, name=(Local|Remote|Total|RequestQueue|ResponseQueue|ResponseSend|MessageConversions)TimeMs, request=(Produce|Fetch|FetchConsumer|FetchFollower)><>Count
-#        name: jmx_kafka_network_$1time_seconds
-#        valueFactor: 0.001
-#        type: COUNTER
-#        labels:
-#          request: "$2"
-#        help: ""
-#      - pattern: kafka.network<type=SocketServer, name=(ExpiredConnectionsKilled|NetworkProcessorAvgIdle)(Count|Percent)><>Value
-#        name: jmx_kafka_network_$1_$2
-#        type: GAUGE
-#        help: ""
-#      #kafka.server:*
-#      - pattern: kafka.server<type=KafkaServer, name=BrokerState><>Value
-#        name: jmx_kafka_server_broker_state
-#        type: GAUGE
-#        help: "Broker state: 1=Starting, 2=RecoveringFromUncleanShutdown, 3=RunningAsBroker, 4=RunningAsController, 6=PendingControlledShutdown, 7=BrokerShuttingDown"
-#      - pattern: kafka.server<type=BrokerTopicMetrics, name=(\w+)PerSec><>Count
-#        name: jmx_kafka_server_brokertopic_$1_total
-#        type: COUNTER
-#        help: ""
-#      - pattern: kafka.server<type=BrokerTopicMetrics, name=(\w+)PerSec, topic=(.+)><>Count
-#        name: jmx_kafka_server_brokertopic_$1_total
-#        type: COUNTER
-#        labels:
-#          topic: $2
-#        help: ""
-#      - pattern: kafka.server<type=DelayedOperationPurgatory, name=PurgatorySize, delayedOperation=(\w+)><>Value
-#        name: jmx_kafka_server_delayedoperation_total
-#        type: GAUGE
-#        labels:
-#          purgatory: $1
-#        help: ""
-#      - pattern: kafka.server<type=ReplicaManager, name=(\w+)PerSec><>Count
-#        name: jmx_kafka_server_$1_total
-#        type: COUNTER
-#        help: ""
-#      - pattern: kafka.server<type=ReplicaManager, name=(\w+)(Count|Partitions)><>Value
-#        name: jmx_kafka_server_$1_total
-#        type: GAUGE
-#        help: ""
-#      - pattern: kafka.server<type=(Fetch|Produce|Request)><>queue-size
-#        name: jmx_kafka_server_queue_total
-#        type: GAUGE
-#        labels:
-#          type: $1
-#        help: ""
-#      - pattern: kafka.server<type=FetcherLagMetrics, name=ConsumerLag, clientId=ReplicaFetcherThread-(\d+-\d+), topic=(.+), partition=(\d+)><>Value
-#        name: jmx_kafka_server_replicafetcherlag_total
-#        type: GAUGE
-#        labels:
-#          thread: $1
-#          topic: $2
-#          partition: $3
-#        help: "Lag in messages per follower replica"
-#      - pattern: kafka.server<type=KafkaRequestHandlerPool, name=RequestHandlerAvgIdlePercent><>OneMinuteRate
-#        name: jmx_kafka_server_requesthandleravgidle_seconds
-#        type: GAUGE
-#        valueFactor: 0.000000001
-#        help: "The average fraction of time the request handler threads are idle"
-#      - pattern: kafka.server<type=ReplicaFetcherManager, name=MaxLag, clientId=Replica><>Value
-#        name: jmx_kafka_server_replicafetcherlag_max
-#        type: GAUGE
-#        help: "Max lag in messages btw follower and leader replicas"
-#      - pattern: kafka.server<type=SessionExpireListener, name=ZooKeeper(\w+)PerSec><>Count
-#        name: jmx_kafka_server_zookeeper_connection_total
-#        type: COUNTER
-#        labels:
-#          event_type: $1
-#        help: "ZooKeeper connection statuses"
-#      - pattern: kafka.server<type=ZooKeeperClientMetrics, name=ZooKeeperRequestLatencyMs><>Count
-#        name: jmx_kafka_server_zookeeper_requests_total
-#        type: COUNTER
-#        help: "ZooKeeper client requests"
-#      - pattern: kafka.server<type=socket-server-metrics, listener=(\w+), networkProcessor=(\d+)><>(.+)-count
-#        name: jmx_kafka_server_socket_$3_total
-#        type: COUNTER
-#        labels:
-#          listener: $1
-#          thread: $2
-#        help: ""
-#      - pattern: kafka.server<type=socket-server-metrics, listener=(\w+), networkProcessor=(\d+)><>(.+)-total
-#        name: jmx_kafka_server_socket_$3_total
-#        type: GAUGE
-#        labels:
-#          listener: $1
-#          thread: $2
-#        help: ""
-
 kafka_extra_envs: {}
-#   KAFKA_HEAP_OPTS: -Xms4G -Xmx4G
-#   KAFKA_JVM_PERFORMANCE_OPTS: -server -XX:MetaspaceSize=128m -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -Djava.awt.headless=true -Duser.timezone=Europe/Moscow
-
+  #KAFKA_HEAP_OPTS: -Xms4G -Xmx4G
+  #KAFKA_JVM_PERFORMANCE_OPTS: -server -XX:MetaspaceSize=128m -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80 -XX:+ExplicitGCInvokesConcurrent -Djava.awt.headless=true -Duser.timezone=Europe/Moscow
+# https://kafka.apache.org/documentation/#brokerconfigs_process.roles
+kafka_process_roles: broker,controller
 kafka_server_properties: {}
-#  controller.quorum.election.backoff.max.ms: 2000
-#  auto.create.topics.enable: 'false'
-#  default.replication.factor: 2
-#  min.insync.replicas: 2
-#  message.max.bytes: 10485760
-#  num.network.threads: 128
-#  num.io.threads: 256
-#  num.partitions: 1
-#  num.replica.fetchers: 3
-#  num.recovery.threads.per.data.dir: 2
-#  socket.send.buffer.bytes: -1
-#  socket.receive.buffer.bytes: -1
-#  socket.request.max.bytes: 104857600
-#  offsets.topic.num.partitions: 20
-#  offsets.topic.replication.factor: 3
-#  transaction.state.log.num.partitions: 20
-#  transaction.state.log.replication.factor: 3
-#  log.retention.hours: 168
-#  log.retention.bytes: -1
-#  log.segment.bytes: 104857600
-#  log.retention.check.interval.ms: 60000
-#  log.flush.scheduler.interval.ms: 1000
-
+  #auto.create.topics.enable: 'false'
+  #default.replication.factor: 2
+  #min.insync.replicas: 2
+  #message.max.bytes: 10485760
+  #num.network.threads: 128
+  #num.io.threads: 256
+  #num.partitions: 1
+  #num.replica.fetchers: 3
+  #num.recovery.threads.per.data.dir: 2
+  #socket.send.buffer.bytes: -1
+  #socket.receive.buffer.bytes: -1
+  #socket.request.max.bytes: 104857600
+  #offsets.topic.num.partitions: 20
+  #offsets.topic.replication.factor: 3
+  #transaction.state.log.num.partitions: 20
+  #transaction.state.log.replication.factor: 3
+  #log.retention.hours: 168
+  #log.retention.bytes: -1
+  #log.segment.bytes: 104857600
+  #log.retention.check.interval.ms: 60000
+  #log.flush.scheduler.interval.ms: 1000
 kafka_log4j_properties: ""
 # enables SASL authorization
 kafka_sasl_enabled: false
+# enables ACLs
+# https://kafka.apache.org/documentation/#security_authz
+kafka_acl_enabled: false
+# defines a password of default kafka superuser
 kafka_password: "changeMe"
+# defines extra users
 kafka_users:
   admin:
+    superuser: true
     password: changeMe
+  foo:
+    superuser: false
+    password: bar
 # kafka_opts provides you with an opportunity to define KAFKA_OPTS environment variable
-kafka_opts: "" # -javaagent:/opt/prometheus/jmx_javaagent.jar=9071:/etc/kafka/prometheus-jmx-exporter.yml
+kafka_opts: ""
+# enables mirror maker if you need to migrate some data between two or more kafka clusters
+# https://kafka.apache.org/documentation/#mirrormakerconfigs
+kafka_mirror_maker_enabled: false
+kafka_mirror_maker_properties: {}

@@ -22,7 +22,7 @@
     owner: "{{ kafka_user }}"
     group: "{{ kafka_group }}"
     mode: "0750"
-  with_items:
+  loop:
     - "{{ kafka_config_directory }}"
     - "{{ kafka_data_directory }}"
     - "{{ kafka_log_directory }}"
@@ -105,6 +105,16 @@
     mode: "0644"
   notify: Restart kafka
 
+- name: Kafka | Create mirror maker config
+  ansible.builtin.template:
+    src: connect-mirror-maker.properties.j2
+    dest: "{{ kafka_config_directory }}/connect-mirror-maker.properties"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0640"
+  notify: Restart kafka-mirror-maker
+  when: kafka_mirror_maker_enabled
+
 - name: Kafka | Check Cluster UUID
   ansible.builtin.stat:
     path: "{{ kafka_config_directory }}/cluster_uuid"
@@ -154,9 +164,27 @@
     mode: "0644"
   notify: Restart kafka
 
+- name: Kafka | Create mirror maker systemd service
+  ansible.builtin.template:
+    src: kafka-mirror-maker.service.j2
+    dest: /etc/systemd/system/kafka-mirror-maker.service
+    owner: root
+    group: root
+    mode: "0640"
+  notify: Restart kafka-mirror-maker
+  when: kafka_mirror_maker_enabled
+
 - name: Kafka | Start service
   ansible.builtin.systemd:
     name: kafka
     daemon_reload: true
     enabled: true
     state: started
+
+- name: Kafka | Start mirror maker systemd service
+  ansible.builtin.systemd:
+    name: kafka-mirror-maker
+    daemon_reload: true
+    enabled: true
+    state: started
+  when: kafka_mirror_maker_enabled

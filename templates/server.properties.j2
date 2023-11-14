@@ -1,25 +1,44 @@
 # {{ ansible_managed }}
 {% set kafka_hosts = groups[kafka_hosts_group] %}
-process.roles=broker,controller
-{% if kafka_hosts | length == 3 %}
+process.roles={{ kafka_process_roles }}
+{% if kafka_hosts | length >= 3 %}
+{%- set kafka_controllers = [] -%}
+{%- for host in kafka_hosts -%}
+{%- if 'controller' in hostvars[host]['kafka_process_roles'] -%}
+{%- set node_id = hostvars[host]['kafka_node_id'] | string -%}
+{%- set node_address = hostvars[host]['ansible_host'] | default(hostvars[host]['ansible_default_ipv4']['address']) -%}
+{%- set controller = node_id + '@' + node_address + ':9093' -%}
+{{ kafka_controllers.append(controller) }}
+{%- endif -%}
+{%- endfor %}
 node.id={{ kafka_node_id }}
-controller.quorum.voters={% for host in kafka_hosts %}{{ hostvars[host]['kafka_node_id'] }}@{{ hostvars[host]['ansible_host'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}:9093{{ ',' if not loop.last }}{% endfor %}
+controller.quorum.voters={% for controller in kafka_controllers %}{{ controller }}{{ ',' if not loop.last }}{% endfor %}
 {% else %}
 node.id=1
 controller.quorum.voters=1@localhost:9093
 {% endif %}
 
+listeners={% for listener in kafka_process_roles.split(',') %}{% if listener == 'broker' %}BROKER://:9092{% elif listener == 'controller' %}CONTROLLER://:9093{% endif %}{{ ',' if not loop.last }}{% endfor %}
+
+inter.broker.listener.name=BROKER
 {% if kafka_sasl_enabled %}
-listeners=SASL_PLAINTEXT://:9092,CONTROLLER://:9093
-inter.broker.listener.name=SASL_PLAINTEXT
 sasl.enabled.mechanisms=PLAIN
+sasl.mechanism.controller.protocol=PLAIN
 sasl.mechanism.inter.broker.protocol=PLAIN
-{% else %}
-listeners=PLAINTEXT://:9092,CONTROLLER://:9093
-inter.broker.listener.name=PLAINTEXT
 {% endif %}
 controller.listener.names=CONTROLLER
-listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
+listener.security.protocol.map=CONTROLLER:{{ 'SASL_PLAINTEXT' if kafka_sasl_enabled else 'PLAINTEXT' }},BROKER:{{ 'SASL_PLAINTEXT' if kafka_sasl_enabled else 'PLAINTEXT' }}
+{% if kafka_sasl_enabled and kafka_acl_enabled %}
+{% set kafka_superusers = [] %}
+{% for key, value in kafka_users.items() %}
+{% if value.superuser is defined and value.superuser | bool %}
+{{ kafka_superusers.append(key) }}
+{% endif %}
+{% endfor %}
+authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer
+super.users=User:kafka;{% for superuser in kafka_superusers %}User:{{ superuser }}{{ ';' if not loop.last }}{% endfor %}
+{% endif %}
+
 log.dirs={{ kafka_data_directory }}
 {% if kafka_server_properties is defined and kafka_server_properties %}
 {% for key, value in kafka_server_properties.items() %}

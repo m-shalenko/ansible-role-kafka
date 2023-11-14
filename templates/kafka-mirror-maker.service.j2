@@ -1,0 +1,17 @@
+[Unit]
+Description=Apache Kafka Mirror Maker
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+User={{ kafka_user }}
+Group={{ kafka_group }}
+ExecStart=/opt/kafka/bin/connect-mirror-maker.sh {{ kafka_config_directory }}/connect-mirror-maker.properties
+ExecStop=/bin/kill $MAINPID
+Restart=always
+RestartSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
